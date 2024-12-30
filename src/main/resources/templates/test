@@ -1,0 +1,9 @@
+spring.application.name=ApplicationDeCommunication
+twilio.account.sid=ACbe981e1c39d8aaa0d53dd608fefca387
+twilio.auth.token=224c3a8b5859e023c35949b5849f105b
+twilio.voice.sid=AP665fca4811d3299507017bd4f5ea8698
+server.port=8081
+#twilio.service-sid=ISf037d32fd8b34089a10d1d2a6d4e59ac
+#twilio.service-sid2=SK8f19aa97c1dc4b011d597a53c5af7294
+twilio.api.key=SK38f182fdc24e01e03287b2c317cb3437
+twilio.api.secret=R86Ybrtu1rn63zovDl8lMQDwULKrKdmj

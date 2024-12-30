@@ -4,6 +4,7 @@ import com.twilio.Twilio;
 import com.twilio.rest.conversations.v1.Conversation;
 import com.twilio.rest.conversations.v1.conversation.Message;
 import com.twilio.rest.conversations.v1.conversation.Participant;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,8 +14,11 @@ import java.util.Map;
 @Service
 public class ConversationService {
 
-    private final String ACCOUNT_SID = "AC6b2e4698cc8a0feaa596c456f3eeb3dd";
-    private final String AUTH_TOKEN = "6e3f8b073a1e554e18aa9c8da61dd65d";
+    @Value("${twilio.account.sid}")
+    private String ACCOUNT_SID;
+
+    @Value("${twilio.auth.token}")
+    private String AUTH_TOKEN;
 
 
     public ConversationService() {

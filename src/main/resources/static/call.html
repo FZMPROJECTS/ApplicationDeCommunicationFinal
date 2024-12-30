@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twilio Voice Test</title>
+    <script src="https://sdk.twilio.com/js/client/v1.14/twilio.min.js"></script>
+</head>
+<body>
+<h1>Twilio Voice Call - Identity: <span id="identity"></span></h1>
+
+<button id="make-call">Make Call</button>
+<button id="hangup-call" style="display: none;">Hang Up</button>
+
+<div id="call-status"></div>
+
+<script>
+    let identity = new URLSearchParams(window.location.search).get("identity");
+    document.getElementById("identity").textContent = identity;
+
+    let device;
+    let connection;
+
+    // Fetch the Twilio token from your server
+    async function fetchToken() {
+        const response = await fetch(`/api/token?identity=${identity}`);
+        const token = await response.text();
+        console.log("Token fetched: ", token);
+        return token;
+    }
+
+    // Initialize Twilio Device with token
+    async function initializeDevice() {
+        const token = await fetchToken();
+        debugger
+        device = new Twilio.Device(token, {
+            codecPreferences: ['opus', 'pcma', 'pcmu'],
+            debug: true
+        });
+        debugger
+
+        device.on('ready', () => {
+            console.log('Twilio Device is ready to make and receive calls');
+            document.getElementById('make-call').disabled = false;
+        });
+
+        device.on('error', (error) => {
+            console.error('Twilio Device Error:', error);
+            alert('Error: ' + error.message);
+        });
+
+        device.on('connect', (conn) => {
+            connection = conn;
+            console.log('Call connected');
+            document.getElementById('make-call').style.display = 'none';
+            document.getElementById('hangup-call').style.display = 'inline';
+            document.getElementById('call-status').textContent = 'Call in Progress...';
+        });
+
+        device.on('disconnect', () => {
+            console.log('Call disconnected');
+            document.getElementById('hangup-call').style.display = 'none';
+            document.getElementById('make-call').style.display = 'inline';
+            document.getElementById('call-status').textContent = 'Call Ended';
+        });
+    }
+
+    // Make a call to the other user
+    document.getElementById('make-call').addEventListener('click', async () => {
+        const receiverIdentity = identity === 'user1' ? 'user2' : 'user1';  // Switch identity to call the other user
+        console.log(`Making call to: ${receiverIdentity}`);
+        connection = device.connect({ To: receiverIdentity });
+    });
+
+    // Hang up the call
+    document.getElementById('hangup-call').addEventListener('click', () => {
+        if (connection) {
+            connection.disconnect();
+        }
+    });
+
+    // Initialize Twilio Device when the page loads
+    window.onload = () => {
+        initializeDevice();
+    };
+</script>
+</body>
+</html>

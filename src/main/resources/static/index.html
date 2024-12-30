@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twilio Conversation</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            background: #fff;
+            width: 80%;
+            max-width: 1000px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar {
+            width: 300px;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+        }
+        .sidebar h3 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .sidebar form {
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar input[type="text"] {
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .sidebar button {
+            padding: 10px;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .sidebar button:hover {
+            background-color: #0056b3;
+        }
+        .chat-area {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #messages {
+            flex-grow: 1;
+            padding: 10px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            max-height: 400px;
+        }
+        .message {
+            margin-bottom: 12px;
+            padding: 8px;
+            background-color: #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+        .message .author {
+            font-weight: bold;
+            color: #007BFF;
+        }
+        #send-message-form {
+            display: flex;
+            flex-direction: column;
+        }
+        #message-body {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        #send-message-form button {
+            padding: 12px;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #send-message-form button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Sidebar for Conversation Creation and Joining -->
+    <div class="sidebar">
+        <h3>Create or Join a Conversation</h3>
+
+        <!-- Create Conversation Form -->
+        <form id="create-conversation-form">
+            <input type="text" id="conversation-name" placeholder="Enter conversation name" required>
+            <button type="submit">Create Conversation</button>
+        </form>
+
+        <!-- Join Conversation Form -->
+        <form id="join-conversation-form">
+            <input type="text" id="conversation-sid" placeholder="Conversation SID" required>
+            <input type="text" id="identity" placeholder="Your Identity" required>
+            <button type="submit">Join Conversation</button>
+        </form>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area">
+        <div class="chat-header" id="chat-header">Welcome to the Conversation</div>
+
+        <div id="messages">
+            <!-- Messages will appear here -->
+        </div>
+
+        <form id="send-message-form">
+            <input type="text" id="message-body" placeholder="Type your message" required>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let conversationSid = null;
+    let identity = null;
+
+    // Fetch API to create a conversation
+    document.getElementById('create-conversation-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const name = document.getElementById('conversation-name').value;
+
+        const response = await fetch('http://localhost:8081/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ friendlyName: name })
+        });
+
+        if (response.ok) {
+            const sid = await response.text();
+            alert(`Conversation created! SID: ${sid}`);
+            document.getElementById('conversation-sid').value = sid; // Automatically fill the SID field for joining
+        } else {
+            alert('Failed to create conversation');
+        }
+    });
+
+    // Fetch API to add a participant to the conversation
+    document.getElementById('join-conversation-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        conversationSid = document.getElementById('conversation-sid').value;
+        identity = document.getElementById('identity').value;
+
+        const response = await fetch(`http://localhost:8081/api/conversations/${conversationSid}/participants`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: identity })
+        });
+
+        if (response.ok) {
+            alert(`You joined the conversation as ${identity}`);
+            fetchMessages(conversationSid); // Fetch messages after joining
+            startPolling(conversationSid);  // Start polling for new messages
+        } else {
+            alert('Failed to join conversation');
+        }
+    });
+
+    // Fetch API to send a message
+    document.getElementById('send-message-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const messageBody = document.getElementById('message-body').value;
+
+        const response = await fetch(`http://localhost:8081/api/conversations/${conversationSid}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity, body: messageBody })
+        });
+
+        if (response.ok) {
+            document.getElementById('message-body').value = ''; // Clear the input field
+            fetchMessages(conversationSid); // Refresh messages after sending
+        } else {
+            alert('Failed to send message');
+        }
+    });
+
+    // Fetch and display messages from the conversation
+    async function fetchMessages(conversationSid) {
+        const response = await fetch(`http://localhost:8081/api/conversations/${conversationSid}/messages`);
+        const messages = await response.json();
+        const messagesContainer = document.getElementById('messages');
+        messagesContainer.innerHTML = ''; // Clear previous messages
+        messages.forEach(message => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<span class="author">${message.author}:</span> ${message.body}`;
+            messagesContainer.appendChild(messageElement);
+        });
+
+        // Auto-scroll to the latest message
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Start polling for new messages every 3 seconds
+    function startPolling(conversationSid) {
+        setInterval(async function () {
+            await fetchMessages(conversationSid);  // Fetch new messages
+        }, 500);  // 3 seconds interval for polling
+    }
+</script>
+
+</body>
+</html>

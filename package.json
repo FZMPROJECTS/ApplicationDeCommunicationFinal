@@ -1,5 +1,17 @@
 {
   "dependencies": {
-    "@twilio/voice-sdk": "^2.12.3"
+    "@twilio/voice-sdk": "^2.12.3",
+    "twilio-client": "^1.15.1"
+  },
+  "name": "twilio-voice-app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "parcel build src/main/resources/static/js/index.js --dist-dir src/main/resources/static/js --out-file twilio-voice.min.js"
+  },
+  "devDependencies": {
+    "parcel": "^2.13.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
   }
 }

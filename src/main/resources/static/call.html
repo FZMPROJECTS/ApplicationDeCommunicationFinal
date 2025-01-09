@@ -3,86 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twilio Voice Test</title>
-    <script src="https://sdk.twilio.com/js/client/v1.14/twilio.min.js"></script>
+    <title>Twilio Call Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            text-align: center;
+            width: 100%;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        h2 {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555;
+        }
+
+        hr {
+            margin: 30px 0;
+        }
+
+        .alert {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+    </style>
 </head>
 <body>
-<h1>Twilio Voice Call - Identity: <span id="identity"></span></h1>
 
-<button id="make-call">Make Call</button>
-<button id="hangup-call" style="display: none;">Hang Up</button>
+<div class="container">
+    <h1>Twilio Call Application</h1>
 
-<div id="call-status"></div>
+    <!-- Input field to enter the identity -->
+    <label for="identity">Identity (Username):</label>
+    <input type="text" id="identity" name="identity" placeholder="Enter your identity" required>
+    <button onclick="generateToken()">Generate Token</button>
+    <h2>Token: <span id="token"></span></h2>
+
+    <hr>
+
+    <!-- Input field to enter the phone number to call -->
+    <label for="phoneNumber">Phone Number (to call):</label>
+    <input type="text" id="phoneNumber" name="phoneNumber" placeholder="Enter phone number" required>
+    <button onclick="makeCall()">Make Call</button>
+    <h2 id="callStatus"></h2>
+</div>
 
 <script>
-    let identity = new URLSearchParams(window.location.search).get("identity");
-    document.getElementById("identity").textContent = identity;
+    // Generate a Twilio token
+    function generateToken() {
+        const identity = document.getElementById("identity").value;
 
-    let device;
-    let connection;
-
-    // Fetch the Twilio token from your server
-    async function fetchToken() {
-        const response = await fetch(`/api/token?identity=${identity}`);
-        const token = await response.text();
-        console.log("Token fetched: ", token);
-        return token;
-    }
-
-    // Initialize Twilio Device with token
-    async function initializeDevice() {
-        const token = await fetchToken();
-        debugger
-        device = new Twilio.Device(token, {
-            codecPreferences: ['opus', 'pcma', 'pcmu'],
-            debug: true
-        });
-        debugger
-
-        device.on('ready', () => {
-            console.log('Twilio Device is ready to make and receive calls');
-            document.getElementById('make-call').disabled = false;
-        });
-
-        device.on('error', (error) => {
-            console.error('Twilio Device Error:', error);
-            alert('Error: ' + error.message);
-        });
-
-        device.on('connect', (conn) => {
-            connection = conn;
-            console.log('Call connected');
-            document.getElementById('make-call').style.display = 'none';
-            document.getElementById('hangup-call').style.display = 'inline';
-            document.getElementById('call-status').textContent = 'Call in Progress...';
-        });
-
-        device.on('disconnect', () => {
-            console.log('Call disconnected');
-            document.getElementById('hangup-call').style.display = 'none';
-            document.getElementById('make-call').style.display = 'inline';
-            document.getElementById('call-status').textContent = 'Call Ended';
-        });
-    }
-
-    // Make a call to the other user
-    document.getElementById('make-call').addEventListener('click', async () => {
-        const receiverIdentity = identity === 'user1' ? 'user2' : 'user1';  // Switch identity to call the other user
-        console.log(`Making call to: ${receiverIdentity}`);
-        connection = device.connect({ To: receiverIdentity });
-    });
-
-    // Hang up the call
-    document.getElementById('hangup-call').addEventListener('click', () => {
-        if (connection) {
-            connection.disconnect();
+        if (!identity) {
+            alert("Please enter a valid identity.");
+            return;
         }
-    });
 
-    // Initialize Twilio Device when the page loads
-    window.onload = () => {
-        initializeDevice();
-    };
+        fetch(`/token?identity=${identity}`)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("token").innerText = data;
+            })
+            .catch(error => {
+                console.error("Error generating token:", error);
+            });
+    }
+
+    // Make a call to the provided phone number
+    function makeCall() {
+        const phoneNumber = document.getElementById("phoneNumber").value;
+
+        if (!phoneNumber) {
+            alert("Please enter a valid phone number.");
+            return;
+        }
+
+        fetch(`/make-call?toPhoneNumber=${phoneNumber}`, {
+            method: 'POST'
+        })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("callStatus").innerText = "Call initiated! SID: " + data;
+            })
+            .catch(error => {
+                console.error("Error making the call:", error);
+            });
+    }
 </script>
+
 </body>
 </html>

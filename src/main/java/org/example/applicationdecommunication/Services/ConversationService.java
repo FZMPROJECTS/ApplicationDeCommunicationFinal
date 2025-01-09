@@ -7,6 +7,7 @@ import com.twilio.rest.conversations.v1.conversation.Participant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +21,8 @@ public class ConversationService {
     @Value("${twilio.auth.token}")
     private String AUTH_TOKEN;
 
-
-    public ConversationService() {
+    @PostConstruct
+    public void initTwilio() {
         Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
     }
 

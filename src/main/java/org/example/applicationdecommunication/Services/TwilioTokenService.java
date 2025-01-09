@@ -21,8 +21,12 @@ public class TwilioTokenService {
     private String voiceSid;
 
     public String generateToken(String identity) {
+        if (voiceSid == null || voiceSid.isEmpty()) {
+            throw new IllegalArgumentException("TwiML Application SID (voiceSid) is missing or invalid.");
+        }
+
         VoiceGrant voiceGrant = new VoiceGrant();
-        voiceGrant.setOutgoingApplicationSid(voiceSid);  // Ensure this SID is correct and matches what you've set up in Twilio Console
+        voiceGrant.setOutgoingApplicationSid(voiceSid);
 
         AccessToken token = new AccessToken.Builder(accountSid, apiKey, apiSecret)
                 .identity(identity)

@@ -20,14 +20,12 @@ public class TokenController {
 
     // Endpoint to generate TwiML for the voice call
     @GetMapping(value = "/api/voice/twiml", produces = "application/xml")
-    public String handleVoiceCall(@RequestParam String identity) {
-        String receiverIdentity = "user2";  // This should be dynamic
-
-        // Adjusted TwiML for the call to user2
+    public String handleVoiceCall(@RequestParam String identity, @RequestParam String to) {
+        // Dynamic handling of receiver identity
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<Response>" +
                 "   <Dial>" +
-                "       <Client>" + receiverIdentity + "</Client>" +
+                "       <Client>" + to + "</Client>" +
                 "   </Dial>" +
                 "</Response>";
     }
